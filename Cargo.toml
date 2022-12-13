@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 chrono = "0.4.23"
 chrono-tz = "0.8.1"
+colored = "2.0.0"
