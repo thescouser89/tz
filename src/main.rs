@@ -8,11 +8,22 @@ use chrono_tz::Canada::Eastern;
 use chrono_tz::Europe::London;
 use chrono_tz::Europe::Prague;
 use chrono_tz::Indian::Mauritius;
+use clap::Parser;
 
 use colored::*;
 
-use std::env;
 use std::fmt::Display;
+
+/// Simple program to show timezone
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Time in UTC in format HH:MM
+    time: Option<String>,
+
+    /// Date in format yy-mm-dd
+    date: Option<String>,
+}
 
 fn pretty_print<Tz: chrono::TimeZone>(date: &DateTime<Tz>, timezone: &str)
 where
@@ -27,45 +38,59 @@ where
 }
 
 fn read_hour_minute(hhmm: &str) -> (u32, u32) {
+    let error_msg = "Cannot parse the time. Needs to be in format HH:MM";
     let tokens: Vec<&str> = hhmm.split(":").collect();
-    let hour = tokens[0].parse().unwrap();
-    let minute = tokens[1].parse().unwrap();
+
+    if tokens.len() != 2 {
+        panic!("{}", error_msg);
+    }
+    let hour = tokens[0].parse().expect(error_msg);
+    let minute = tokens[1].parse().expect(error_msg);
 
     (hour, minute)
 }
 
 fn read_yy_mm_dd(yymmdd: &str) -> (i32, u32, u32) {
+    let error_msg = "Cannot parse the date. Needs to be in format yyyy-mm-dd";
     let tokens: Vec<&str> = yymmdd.split("-").collect();
-    let year = tokens[0].parse().unwrap();
-    let month = tokens[1].parse().unwrap();
-    let day = tokens[2].parse().unwrap();
+
+    if tokens.len() != 3 {
+        panic!("{}", error_msg);
+    }
+    let year = tokens[0].parse().expect(error_msg);
+    let month = tokens[1].parse().expect(error_msg);
+    let day = tokens[2].parse().expect(error_msg);
     (year, month, day)
 }
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
+
+    let args = Args::parse();
 
     // only time specified
-    let utc_time = match args.len() {
+    let utc_time = match args.time {
         // no specific time or date
-        1 => Utc::now(),
+        None => Utc::now(),
         // only time specified: HH:MM
-        2 => {
-            let (hour, minute) = read_hour_minute(&args[1]);
-            Utc::now()
-                .with_hour(hour)
-                .unwrap()
-                .with_minute(minute)
-                .unwrap()
-        }
-        // HH:MM and yy-mm-dd specified
-        3 => {
-            let (hour, minute) = read_hour_minute(&args[1]);
-            let (year, month, day) = read_yy_mm_dd(&args[2]);
-            Utc.with_ymd_and_hms(year, month, day, hour, minute, 0)
-                .unwrap()
-        }
-        _ => panic!("Too many arguments"),
+        Some(time) => {
+            match args.date {
+                None => {
+                    let (hour, minute) = read_hour_minute(&time);
+                    Utc::now()
+                        .with_hour(hour)
+                        .unwrap()
+                        .with_minute(minute)
+                        .unwrap()
+                },
+                // HH:MM and yy-mm-dd specified
+                Some(date) => {
+                    let (hour, minute) = read_hour_minute(&time);
+                    let (year, month, day) = read_yy_mm_dd(&date);
+                    Utc.with_ymd_and_hms(year, month, day, hour, minute, 0)
+                        .unwrap()
+                }
+            }
+        },
     };
 
     pretty_print(&utc_time.with_timezone(&Eastern), "Eastern time");
