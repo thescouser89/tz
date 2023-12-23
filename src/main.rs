@@ -1,6 +1,6 @@
 use chrono::DateTime;
 use chrono::Timelike;
-use chrono::{TimeZone, Utc};
+use chrono::{Local, TimeZone, Utc};
 use chrono_tz::Asia::Calcutta;
 use chrono_tz::Asia::Jerusalem;
 use chrono_tz::Asia::Shanghai;
@@ -23,6 +23,10 @@ struct Args {
 
     /// Date in format yy-mm-dd
     date: Option<String>,
+
+    /// Consider date in UTC instead of local time
+    #[clap(long, action)]
+    utc: bool,
 }
 
 fn pretty_print<Tz: chrono::TimeZone>(date: &DateTime<Tz>, timezone: &str)
@@ -64,7 +68,6 @@ fn read_yy_mm_dd(yymmdd: &str) -> (i32, u32, u32) {
 }
 
 fn main() {
-
     let args = Args::parse();
 
     // only time specified
@@ -76,21 +79,37 @@ fn main() {
             match args.date {
                 None => {
                     let (hour, minute) = read_hour_minute(&time);
-                    Utc::now()
-                        .with_hour(hour)
-                        .unwrap()
-                        .with_minute(minute)
-                        .unwrap()
-                },
+                    if args.utc {
+                        Utc::now()
+                            .with_hour(hour)
+                            .unwrap()
+                            .with_minute(minute)
+                            .unwrap()
+                    } else {
+                        Local::now()
+                            .with_hour(hour)
+                            .unwrap()
+                            .with_minute(minute)
+                            .unwrap()
+                            .with_timezone(&Utc)
+                    }
+                }
                 // HH:MM and yy-mm-dd specified
                 Some(date) => {
                     let (hour, minute) = read_hour_minute(&time);
                     let (year, month, day) = read_yy_mm_dd(&date);
-                    Utc.with_ymd_and_hms(year, month, day, hour, minute, 0)
-                        .unwrap()
+                    if args.utc {
+                        Utc.with_ymd_and_hms(year, month, day, hour, minute, 0)
+                            .unwrap()
+                    } else {
+                        Local
+                            .with_ymd_and_hms(year, month, day, hour, minute, 0)
+                            .unwrap()
+                            .with_timezone(&Utc)
+                    }
                 }
             }
-        },
+        }
     };
 
     pretty_print(&utc_time.with_timezone(&Eastern), "Eastern time");
