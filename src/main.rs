@@ -8,6 +8,7 @@ use chrono_tz::Canada::Eastern;
 use chrono_tz::Europe::London;
 use chrono_tz::Europe::Prague;
 use chrono_tz::Indian::Mauritius;
+use chrono_tz::Australia::Sydney;
 use clap::Parser;
 
 use colored::*;
@@ -120,4 +121,5 @@ fn main() {
     pretty_print(&utc_time.with_timezone(&Mauritius), "Mauritius");
     pretty_print(&utc_time.with_timezone(&Calcutta), "Pune");
     pretty_print(&utc_time.with_timezone(&Shanghai), "Beijing");
+    pretty_print(&utc_time.with_timezone(&Sydney), "Sydney");
 }
